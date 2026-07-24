@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+
+.vscode/
+
+*.pt
+
+*.jpg
+*.png
+
+.env
