@@ -5,7 +5,11 @@ __pycache__/
 
 *.pt
 
-*.jpg
-*.png
+test.jpg
+test2.jpg
+test3.jpg
+*.pt
+__pycache__/
+.vscode/
 
 .env
