@@ -23,6 +23,13 @@ The model detects objects from images and displays:
 - Bounding box visualization
 - Confidence score calculation
 
+
+## Output
+
+Example detection result:
+
+![YOLO Detection Output](detected_output.jpg)
+
 ## Installation
 
 Clone this repository:
