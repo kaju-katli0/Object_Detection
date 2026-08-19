@@ -1,67 +1,136 @@
 from ultralytics import YOLO
 import cv2
+import torch
 from collections import Counter
 
-# Load a more accurate YOLO model
-# Options:
-# yolov8n.pt (Fastest)
-# yolov8s.pt
-# yolov8m.pt (Recommended)
-# yolov8l.pt
+
+# ==========================================
+# 1. CHECK GPU
+# ==========================================
+
+print("CUDA available:", torch.cuda.is_available())
+
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+    device = 0
+else:
+    print("GPU not available")
+    device = "cpu"
+
+
+# ==========================================
+# 2. LOAD YOLOv8m
+# ==========================================
+
 model = YOLO("yolov8m.pt")
 
-print("YOLO Model Loaded Successfully")
+
+# ==========================================
+# 3. IMAGE
+# ==========================================
 
 image_path = "test2.jpg"
 
 image = cv2.imread(image_path)
 
 if image is None:
-    print("Error: Image not found!")
-    exit()
+    raise FileNotFoundError(
+        "test.jpg not found. Put test.jpg in the project folder."
+    )
 
-# Better detection settings
+
+# ==========================================
+# 4. DETECTION
+# ==========================================
+
 results = model.predict(
     source=image,
-    conf=0.50,      # Ignore detections below 50%
-    iou=0.45,       # Helps reduce duplicate boxes
-    imgsz=1280,     # Larger input for better small-object detection
-    max_det=100,
-    verbose=False
+    imgsz=1280,
+    conf=0.10,
+    iou=0.50,
+    augment=True,
+    device=device,
+    verbose=True
 )
 
-object_list = []
 
-for result in results:
+# ==========================================
+# 5. PROCESS RESULTS
+# ==========================================
 
-    boxes = result.boxes
+result = results[0]
 
-    for box in boxes:
+detected_objects = []
 
-        class_id = int(box.cls[0])
-        confidence = float(box.conf[0])
 
-        class_name = model.names[class_id]
+print("\n======================================")
+print("DETECTED OBJECTS")
+print("======================================")
 
-        object_list.append(class_name)
 
-        print(f"{class_name:15} Confidence: {confidence:.2f}")
+for box in result.boxes:
 
-counts = Counter(object_list)
+    class_id = int(box.cls.item())
 
-print("\n==========================")
+    confidence = float(box.conf.item())
+
+    object_name = model.names[class_id]
+
+    detected_objects.append(object_name)
+
+    print(
+        f"{object_name:<20}"
+        f"{confidence * 100:.2f}%"
+    )
+
+
+# ==========================================
+# 6. COUNT OBJECTS
+# ==========================================
+
+counts = Counter(detected_objects)
+
+
+print("\n======================================")
 print("OBJECT COUNT")
-print("==========================")
+print("======================================")
 
-for obj, count in counts.items():
-    print(f"{obj:15}: {count}")
 
-annotated = results[0].plot()
+if counts:
 
-cv2.imwrite("detected_output.jpg", annotated)
+    for object_name, count in counts.items():
 
-print("\nOutput image saved as detected_output.jpg")
+        print(
+            f"{object_name:<20}: {count}"
+        )
 
-cv2.imshow("YOLO Object Detection", annotated)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+else:
+
+    print("No objects detected.")
+
+
+# ==========================================
+# 7. SAVE RESULT
+# ==========================================
+
+output_image = result.plot()
+
+cv2.imwrite(
+    "detected_output.jpg",
+    output_image
+)
+
+
+print("\n======================================")
+print("DONE")
+print("======================================")
+
+print("Output saved as: detected_output.jpg")
+
+
+# ==========================================
+# 8. DISPLAY RESULT
+# ==========================================
+
+print("\nDetection completed successfully.")
+print("Open detected_output.jpg from the VS Code Explorer to view the result.")
